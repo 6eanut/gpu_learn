@@ -1,8 +1,8 @@
 学习CUDA编程公开课：
-https://www.bilibili.com/video/BV1z541137iG
+[https://www.bilibili.com/video/BV11U4y1n7C8](https://www.bilibili.com/video/BV11U4y1n7C8)
 
 学习Triton的官方文档：
-https://triton-lang.org/main/index.html
+[https://triton-lang.org/main/index.html](https://triton-lang.org/main/index.html)
 
 要探索的问题：
 
@@ -13,6 +13,5 @@ https://triton-lang.org/main/index.html
 5. 使用Triton编写一个矩阵乘法算法，针对多种不同规模的矩阵乘，性能要求不低于pytorch自带的矩阵乘法实现。记录下每一步优化过程。
 
 注意第三点，你要学会一种性能测试工具的使用方式。然后关于各种性能指标，结合第一个公开课，到时候你要能讲明白。
-
 
 你用1~2周的时间把上面的学习任务完成，然后讲一个talk，介绍你的工作。这个就是我们主要的面试选拔过程了。
