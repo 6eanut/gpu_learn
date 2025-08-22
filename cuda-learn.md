@@ -18,7 +18,7 @@ portability指的是一个软件可以在不同架构的core上运行；
 
 当我们在host函数中调用kernel函数时，会需要设置执行配置，即当前grid中的block数和每个block中的thread数(block数设置为SM的整数倍；thread数设置为256，即32的整数倍)。
 
-然后在kernel函数里面通过`threadIdx.x+blockIdx.x*blockDim.x`来获得当前线程在grid中的唯一索引号。
+然后在kernel函数里面通过 `threadIdx.x+blockIdx.x*blockDim.x`来获得当前线程在grid中的唯一索引号。
 
 问题是这样的，在cuda编程课里面，讲到gird和block都是2D/3D的，那为什么在求每个线程的索引时只用x就可以了呢？
 
@@ -31,3 +31,11 @@ testKernel<<<gridSize, blockSize>>>();
 ```
 
 一旦block/grid不是1D，那么 `threadIdx.x+blockIdx.x*blockDim.x`获取索引的方式就不再正确了。
+
+---
+
+在nvidia gpu里面，一个device会有一个grid，对应着多个block，这多个block共享一个global memory，每个block里面有多个thread，每个thread都有自己的registers；
+
+cudamalloc和cudamemcpy是分配host/device可用的内存以及在host/device之间传递数据的api；
+
+在triton编程中几乎不怎么涉及这两个操作，这两个操作由框架去实现了；所以triton能够让开发者更加专注于算法逻辑，简化了gpu编程。·
