@@ -3,3 +3,13 @@
 通过LLM，简单了解GPU、CUDA、Triton的一些基本概念
 
 针对task，先研究pytorch自带的矩阵乘法实现是什么，参考资料：[pytorch docs](https://docs.pytorch.org/docs/stable/index.html)
+
+# 0821
+
+学习[matmul from triton docs](https://triton-lang.org/main/getting-started/tutorials/03-matrix-multiplication.html#sphx-glr-getting-started-tutorials-03-matrix-multiplication-py)，大致了解矩阵乘可以考虑的几个优化方向
+
+# 0822
+
+阅读了论文 [Triton: An Intermediate Language and Compiler for Tiled Neural Network Computations](http://www.eecs.harvard.edu/~htk/publication/2019-mapl-tillet-kung-cox.pdf)
+
+triton程序会经过triton-jit编译器，编译成triton-ir，然后会做多轮优化pass，然后编译成llvm-ir，再做多轮pass优化，然后利用llvm后端编译成ptx(parallel thread execution)，最后运行时cuda会将ptx编译成sass(streaming assembler)，即GPU实际运行的机器码。
