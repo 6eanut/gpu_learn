@@ -39,3 +39,7 @@ testKernel<<<gridSize, blockSize>>>();
 cudamalloc和cudamemcpy是分配host/device可用的内存以及在host/device之间传递数据的api；
 
 在triton编程中几乎不怎么涉及这两个操作，这两个操作由框架去实现了；所以triton能够让开发者更加专注于算法逻辑，简化了gpu编程。·
+
+---
+
+核函数有__global__和__device__两种声明方式，前者只能被host函数调用，后者只能被device函数调用；有的函数会被声明成__host__和__device__，那是因为它往往是device端和host端都会用到的util函数。
