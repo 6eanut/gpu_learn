@@ -13,3 +13,9 @@
 阅读了论文 [Triton: An Intermediate Language and Compiler for Tiled Neural Network Computations](http://www.eecs.harvard.edu/~htk/publication/2019-mapl-tillet-kung-cox.pdf)
 
 triton程序会经过triton-jit编译器，编译成triton-ir，然后会做多轮优化pass，然后编译成llvm-ir，再做多轮pass优化，然后利用llvm后端编译成ptx(parallel thread execution)，最后运行时cuda会将ptx编译成sass(streaming assembler)，即GPU实际运行的机器码。
+
+# 0823
+
+triton实现矩阵乘分三步，第一步：逐元素求结果矩阵；第二步：逐块求结果矩阵；第三步：求结果矩阵中元素/块的顺序；附：利用triton.autotune,tl.assume
+
+这个实现逻辑倒是理顺了，但是性能远不如pytorch，再调研下吧
