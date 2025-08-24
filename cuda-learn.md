@@ -57,3 +57,49 @@ cudamalloc和cudamemcpy是分配host/device可用的内存以及在host/device�
 对于GPU的并行逻辑是这样的，默认block中的thread是平方数(blockdim)，那么就看对于矩阵c的i行j列，分别需要多少个block才能cover住(gridim)，以此来计算griddim的两个维度，而后在内核函数里面，利用griddim和blockdim的x和y的分量分别表示i和j，然后这样就能并行计算结果了。
 
 这是最直观的计算方式
+
+---
+
+假设这么一个场景，在kernel函数里面，根据threadidx/blockidx来设定条件分枝的条件，那么此时有可能会出现这么一个情况，那就是同一个warp内(32个连续的thread)，会有两组thread，分别走向不同的branch，这会导致GPU性能损耗。
+
+这个叫做branch divergence，GPU中的线程是以warp为单位执行的，而且每个warp内的线程共用同一个pc，这导致同一个warp内的thread不能同时执行不同的指令，即不同的分支必须顺序执行，通过分支掩码机制来将更新thread的活跃/屏蔽状态。下面是一个例子：
+
+```
+__global__ void example_kernel(int* data) {
+    int tid = threadIdx.x;  // tid范围：0-31（一个warp）
+  
+    if (tid < 16) {
+        data[tid] = tid * 2;     // 路径A
+    } else {
+        data[tid] = tid + 10;    // 路径B
+    }
+}
+```
+
+我们有这么一个kernel函数，假设启动的执行配置是<32,32>，意味着有32个block，每个block有32个thread，thread的编号为0～31.
+
+warp是GPU中线程调度和执行的基本单位，一个warp包含32个线程，这32个线程共用一个程序计数器，这意味着在同一时刻，一个warp内的所有线程都会去执行相同的指令。
+
+在上面的代码中，对于一个warp内的32个线程，会被分为两组，第一组执行路径A，第二组执行路径B。在实际执行过程中，由于同一warp内共用同一个pc，所以当第一组线程实际执行路径A时，第二组线程会被屏蔽掉/执行路径A但结果被丢弃，然后第二组线程会去执行路径B，与此同时，第一组线程会被屏蔽掉/执行路径B但结果被丢弃。
+
+实现上述屏蔽过程的是，一个warp内会维护一个32位的分支掩码，用来表示warp内线程的活跃/屏蔽状态，来决定是否执行当前pc所指的指令。
+
+故，当一个warp内出现两组/多组线程执行不同的分支时，该warp的执行时间并不是执行时间最长的那个分支，而是所有分支执行时间的总和。
+
+以上就是branch divergence会导致性能下降的原因。
+
+---
+
+在nvgpu里面，内存架构是这样的，一个grid(多个block)共享一个global memory和constant memory，每个block里面(多个thread)共享一个shared memory，每个thread有自己的寄存器。
+
+怎么确定数据存放在哪个地方？对于kernel函数中直接声明的变量，那就是放在register里面，但如果是数组，那么会存在shared memory里面；对于cudamemalloc动态申请的数据，会放在global memory里面。在kernel函数里面可以通过声明变量前加device/shared/constant来决定把数据存到哪。
+
+编程时，为了使数据访问更高效，往往会把大数据分为多个tile，然后每个tile放在shared memory里面，执行结束后，再写回global memory。注意当一个kernel要用另一个kernel的写结果时，一定要等前面kernel完全执行完毕，否则可能前面kernel写的数据还没写回global memory。
+
+在triton编程里面，数据放在哪个内存结构由triton-jit编译器来决定。
+
+---
+
+cuda编程提供了一种同步的api，就是可以同步一个block中的所有thread，因为存在这样的需求，所以一个grid中有多个block是很必要的，这有助于提高性能。
+
+另外有一个问题，就是矩阵tiled乘法，结果矩阵中的每个元素都是分多阶段求出来的。

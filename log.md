@@ -19,3 +19,11 @@ triton程序会经过triton-jit编译器，编译成triton-ir，然后会做多�
 triton实现矩阵乘分三步，第一步：逐元素求结果矩阵；第二步：逐块求结果矩阵；第三步：求结果矩阵中元素/块的顺序；附：利用triton.autotune,tl.assume
 
 这个实现逻辑倒是理顺了，但是性能远不如pytorch，再调研下吧
+
+# 0824
+
+今天研究这么几个问题：
+
+* 如何实际测试一个GPU程序的性能？(cuda程序/triton程序)
+* nsight/triton.test是做什么的，简单了解一下
+* 测试一个CPU程序的性能往往用的是spec cpu/perf，那么对于gpu而言是什么呢？
