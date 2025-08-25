@@ -27,3 +27,9 @@ triton实现矩阵乘分三步，第一步：逐元素求结果矩阵；第二�
 * 如何实际测试一个GPU程序的性能？(cuda程序/triton程序)
 * nsight/triton.test是做什么的，简单了解一下
 * 测试一个CPU程序的性能往往用的是spec cpu/perf，那么对于gpu而言是什么呢？
+
+nsight systems和nsight compute貌似triton和cuda程序都能测.
+
+# 0825
+
+完成网课performance consideration
