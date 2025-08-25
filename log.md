@@ -33,3 +33,8 @@ nsight systems和nsight compute貌似triton和cuda程序都能测.
 # 0825
 
 完成网课performance consideration
+
+* dram的结构、dram为啥慢？dram burst是啥？
+* 内存合并coalesced memort ,corner turning?
+* convolution computation,矩阵乘，如果越界，按零处理，这个很容易理解。
+* constant memory可以用于存放卷积核等常量，constant memory啥作用？
