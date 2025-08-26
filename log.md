@@ -38,3 +38,21 @@ nsight systems和nsight compute貌似triton和cuda程序都能测.
 * 内存合并coalesced memort ,corner turning?
 * convolution computation,矩阵乘，如果越界，按零处理，这个很容易理解。
 * constant memory可以用于存放卷积核等常量，constant memory啥作用？
+
+# 0826
+
+在[cuda learning](https://learn.nvidia.com/courses/course)里面做实验，每次启动先搭环境
+
+```
+!pip install torch==1.12.1+cu102 torchvision==0.13.1+cu102 torchaudio==0.12.1 --extra-index-url https://download.pytorch.org/whl/cu102
+!pip install numpy==1.23.3 pandas triton matplotlib
+```
+
+查看cuda和pytorch对应版本关系：[https://pytorch.org/get-started/previous-versions/](https://pytorch.org/get-started/previous-versions/)
+
+nsight system分析性能 `!nsys profile --stats=true python ./test.py`
+
+几个问题：
+
+* 使用autotune，能否获取当下key的最优config？
+* nsys分析得到的数据怎么看？怎么针对性做优化？
