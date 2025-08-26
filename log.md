@@ -56,3 +56,5 @@ nsight system分析性能 `!nsys profile --stats=true python ./test.py`
 
 * 使用autotune，能否获取当下key的最优config？
 * nsys分析得到的数据怎么看？怎么针对性做优化？
+
+今晚分析一下nsys得到的结果，然后明天看triton文档里面的testing部分还有gemm部分
