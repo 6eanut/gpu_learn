@@ -86,6 +86,6 @@ pip install numpy pandas triton matplotlib
 
 目前在几个免费GPU平台都做了尝试(google colab,cloud studio, cuda learning),nsys目前可用,ncu不可用
 
-两个难点:1.没有图形化界面;2.ncu环境搭建不起来
+nsys可以在cuda learning使用，有图形化界面；ncu需要读performance counters，而这在上述平台中无法获取权限；
 
-暂且先用nsys进行分析吧
+计划用nsys做分析
