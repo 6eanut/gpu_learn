@@ -58,3 +58,34 @@ nsight system分析性能 `!nsys profile --stats=true python ./test.py`
 * nsys分析得到的数据怎么看？怎么针对性做优化？
 
 今晚分析一下nsys得到的结果，然后明天看triton文档里面的testing部分还有gemm部分
+
+# 0827
+
+安装nsight compute
+
+```
+!apt-get install expect -y
+!wget https://developer.nvidia.com/rdp/assets/nsight-compute-2019_3-Linux-installer
+!chmod +x nsight-compute-2019_3-Linux-installer
+!chmod +x install_nsight.exp
+!./install_nsight.exp
+!./nsight-compute-2019_3-Linux-installer
+!ncu --set detailed -f -o detailed_triton_matmul python your_script.py
+```
+
+ncu-ui启动图形窗口
+
+```
+apt update
+apt install python3-dev python3-venv
+python3 -m venv venv
+source ~/venv/bin/activate
+pip install torch==1.10.2+cu102 torchvision==0.11.3+cu102 torchaudio==0.10.2+cu102 -f https://download.pytorch.org/whl/cu102/torch_stable.html
+pip install numpy pandas triton matplotlib
+```
+
+目前在几个免费GPU平台都做了尝试(google colab,cloud studio, cuda learning),nsys目前可用,ncu不可用
+
+两个难点:1.没有图形化界面;2.ncu环境搭建不起来
+
+暂且先用nsys进行分析吧

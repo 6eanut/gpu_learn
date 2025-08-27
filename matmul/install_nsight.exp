@@ -1,0 +1,14 @@
+#脚本用于在jupyter 里面装ncu
+#!/usr/bin/expect -f
+set timeout -1
+spawn ./nsight-compute-2019_3-Linux-installer
+expect "Press <Enter> or <Return> to read end user license agreement."
+send "\r"
+expect "Do you <ACCEPT|DECLINE>*"
+send "ACCEPT\r"
+expect "Enter install path:*"
+send "/usr/local/NVIDIA-Nsight-Compute-2019.3\r"
+expect "Would you like a symlink created*"
+send "YES\r"
+expect eof
+EOF
