@@ -89,3 +89,18 @@ pip install numpy pandas triton matplotlib
 nsys可以在cuda learning使用，有图形化界面；ncu需要读performance counters，而这在上述平台中无法获取权限；
 
 计划用nsys做分析
+
+# 0828
+
+目标是triton实现的matmul优于pytorch的matmul，目前benchmark聚焦于方阵，规模是256~4096(128递增)
+
+1. 缩小规模，例如先调试128~1024；
+2. 运行triton.testing，查看哪个规模性能不如pytorch，打开autotune的调试信息，显式最优配置；
+3. 对特定规模的最优配置进行nsys，查看性能卡在哪里，调grid/config；
+4. 更新triton.testing所用的config等进行验证
+
+kernel运行不稳定，对于同一规模矩阵乘，最优配置可能不同；
+
+256~1920：[bestconfig](matmul/256_1920_bestconfig.txt)
+
+![1756362928261](image/log/1756362928261.png)
