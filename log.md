@@ -104,3 +104,7 @@ kernel运行不稳定，对于同一规模矩阵乘，最优配置可能不同�
 256~1920：[bestconfig](matmul/256_1920_bestconfig.txt)
 
 ![1756362928261](image/log/1756362928261.png)
+
+矩阵分块，块的大小并不会随着要计算的矩阵大小而变大，因为shared memory是固定的，以及可以设BLOCK_SIZE_M为1。
+
+针对不同的gpu，会有不同的配置config
