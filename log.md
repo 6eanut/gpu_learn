@@ -48,7 +48,7 @@ nsight systems和nsight compute貌似triton和cuda程序都能测.
 !pip install numpy==1.23.3 pandas triton matplotlib
 ```
 
-查看cuda和pytorch对应版本关系：[https://pytorch.org/get-started/previous-versions/](https://pytorch.org/get-started/previous-versions/)
+查看cuda和pytorch对应版本关系：[https://pytorch.org/getpip install torch==2.7.1 torchvision==0.22.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu126-started/previous-versions/](https://pytorch.org/get-started/previous-versions/)
 
 nsight system分析性能 `!nsys profile --stats=true python ./test.py`
 
