@@ -1,4 +1,3 @@
-
 * GPU是如何做矩阵乘法的；
 * GPU做运算的效率受到哪些因素的制约（想写出充分发挥GPU能力的程序，需要从哪些方面优化）；
 * 如何实际测试一个GPU程序的性能；
@@ -63,14 +62,64 @@ Nsight System：
 
 Nsight Compute：
 
-* 支持多个event, metric, section；
+* 支持多个event, metric, section：
+  * event：硬件计数，如cache miss等；
+  * metric：由具有相似特征event计算得到，如gld_efficiency等；
+  * section：由具有相似特征metric计算得到，如memory会涉及global memory、shared memory等；
 * 判断是compute/memory/latency bound中的哪一种，查看SOL Section；
 
 ![1756540258699](image/final/1756540258699.png)
 
 * Compute Workload Analysis：各个pipeline的利用率，可以定位是卡在哪个计算环节了(fma, lsu等\)；
+
+  ![1756607081930](image/final/1756607081930.png)
 * Scheduler Statistics Analysis：反应每次调度发射的warp数占理论值的百分比；
+  一个warp被阻塞而不能发射的原因：1.内存依赖；2.执行依赖；3.pipeline无空闲等
+
+  ![1756607556655](image/final/1756607556655.png)
 * Warp State Statistics Analysis：反映了warp被stall的原因；
+  stall long scoreboard：访问全局内存；warp cycles per issued instruction：平均每发射一条指令需要等待多少个cycle
+
+  ![1756607861748](image/final/1756607861748.png)
 * Memory Wordload Analysis：L1/L2 命中率、带宽利用率、bank conflicts等；
+
+  ![1756608467265](image/final/1756608467265.png)
 * Launch Statistics Analysis：每个线程用了多少寄存器，共享内存的访问情况等；
+  由此可以调整执行配置来进行优化··
+
+  ![1756609093936](image/final/1756609093936.png)
 * Source Conters Statistics Analysis：哪条指令执行次数最多、哪里出现了非合并访问等；
+
+## 4 Triton语言相比CUDA，优缺点是什么
+
+Triton开源，CUDA闭源；->开源相较于闭源有啥优势？有啥劣势？
+
+Triton一般集成在python中，CUDA集成在C/C++中；->有啥优势，有啥劣势？
+
+Triton程序可以让程序员专注于算法实现，而底层配置/优化由triton-jit编译器来完成，CUDA程序需要程序员在设计算法的同时兼顾执行配置、数据同步等操作；->优势和劣势？
+
+* 开源(Triton) vs 闭源(CUDA)：
+  * Triton透明可定制，并且支持跨架构；
+  * CUDA生态成熟，但可移植性不强；
+  * Triton作为开源项目，具备透明、可定制、无锁定等优势，但在稳定性、官方支持和新硬件首发适配上不及CUDA；CUDA闭源但成熟稳健、工具链完备、性能领先，相应的代价是厂商锁定与不可定制内部实现。
+* Python(Triton) vs C/C++(CUDA)：
+  * Triton语法简洁，可以和pytorch等无缝衔接，Triton-jit编译器自动调优；低层级调试工具不足，源码级映射到PTX/SASS不如C/C++直观；
+  * CUDA可精细把握内存分配、异步流、共享内存使用等，使程序达到极致性能；开发成本高，开发效率不如Triton；
+  * Triton通常嵌入在Python生态中，开发效率高、与深度学习框架衔接自然；CUDA主要面向C/C++，强调可控性。
+* 抽象度高(Triton) vs 抽象度低(CUDA)：
+  * Triton可以用更快的时间、更少的代码量写出和CUDA程序性能接近的程序，使程序员更关注算法实现；
+  * CUDA程序可以最大化利用硬件，除了算法之外，还需要关注内存访问等细节；
+  * Triton让开发者更专注于算法本身，把调度与优化交给编译器；CUDA 要求同时管理执行配置、内存与同步等细节，开发成本更高，但能换取极致性能与更强的确定性。
+
+## 5 使用Triton编写一个矩阵乘法算法，针对多种不同规模的矩阵乘，性能要求不低于pytorch自带的矩阵乘法实现
+
+![1756605675803](image/final/1756605675803.png)
+
+注：矩阵A(M行K列) 乘 矩阵B(K行N列)，M=K=N，从256到4096，每次步长128。
+
+* 对结果矩阵进行分块计算；
+* 对结果矩阵中的块计算顺序：
+
+![1756605930514](image/final/1756605930514.png)
+
+* autotune的config调试。
