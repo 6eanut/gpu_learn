@@ -98,3 +98,47 @@ flash1的block内分工是这样的，对于结果O1 O2 O3 O4，每个warp分别
 flash2是这么做的，对于结果O1 O2 O3 O4，每个warp分别结算Oi，这样完全避免了warp之间的通信和同步。
 
 实现方法就是，原本flash1采用的外循环是K和V，内循环是Q，计算Oi的每一小部分；改为flash2的外循环是Q，内循环是K和V，计算一个完整的Oi。
+
+## FlashAttention 3
+
+1.数据搬运和计算并行化；2.矩阵乘法和非矩阵乘法并行化；3.改用低精度来提高吞吐；
+
+![1756859720081](image/learn/1756859720081.png)
+
+### 1 数据搬运和计算并行化
+
+利用NVIDIA Hopper GPU提供的TMA和WGMMA异步硬件指令来实现数据搬运和计算的并行。
+
+针对一个CTA，其包含生产者warp group和消费者warp group，前者利用TMA来异步将Q,K,V从HBM搬运到SMEM，后者利用WGMMA来异步计算GEMM和Softmax。生产者搬运完一组K,V之后会通知消费者让其计算O，消费者计算完一组O之后会通知生产者让其搬运下一组K和V。
+
+在消费者warp group内部，计算步骤是GEMM->Softmax->GEMM(上面的Algorithm1的第16~22行)，即Tensor Core跑完GEMM停下来，等MFU跑Softmax，等MFU跑完之后Tensor Core再去做第三步的GEMM。
+
+存在这么一个情况，就是多个消费者会抢占Tensor Core或MFU，从而造成Tensor Core很忙MFU闲着/Tensor Core闲着MFU很忙的情况。
+
+flash3利用bar.sync来将消费者错峰执行，即当消费者1执行GEMM时，让消费者2执行Softmax，这样可以最大化重叠GEMM和Softmax的执行时间(跨warp group的并行)。
+
+![1756863196906](image/learn/1756863196906.png)
+
+### 2 warp group内的矩阵乘法和非矩阵乘法并行化
+
+![1756863841695](image/learn/1756863841695.png)
+
+对于一个warp group，原本的执行流程是这样的：
+
+WGMMA_0_0->SOFTMAX_0->WGMMA_0_1->WGMMA_1_0->SOFTMAX_1->WGMMA_1_1->WGMMA_2_0->SOFTMAX_2->WGMMA_2_1
+
+引入流水线技术后是这样的：
+
+WGMMA_0_0->SOFTMAX_0->WGMMA_1_0->SOFTMAX_1(WGMMA_0_1)>WGMMA_2_0->SOFTMAX_2(WGMMA_1_1)->WGMMA_2_1
+
+整体上来说，就是将当前迭代的Softmax计算和上一个迭代的GEMM计算重叠起来，不过这需要额外的寄存器来辅助实现。
+
+### 3 改用低精度来提高吞吐
+
+flash3改用FP8来大幅提高吞吐量，但这带来两个问题：1.布局要求不同；2.精度下降。
+
+Q,K,V在内存中通常是head维度连续，FP8 WGMMA1要求V是序列长度维度连续，这导致用常规的内存布局会不满足硬件读写约束；
+
+解决方法是：在生产者warp group里面，利用LDSM和STSM指令将矩阵在SMEM和寄存器之间搬运，并在搬运的过程中实现转置；该过程会和上一轮的GEMM重叠执行，几乎不额外占用时间。
+
+针对精度下降这个问题，flash3采用了两种方法，1.将 为整个大张量使用一个缩放因子 改为 为每个小块数据独立计算和使用一个缩放因子；2.非相干处理，即在量化之前，将Q和K矩阵乘以一个随机正交矩阵。
