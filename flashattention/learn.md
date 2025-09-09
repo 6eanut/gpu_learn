@@ -6,9 +6,9 @@
 
 在介绍FlashAttention之前，需要先说一下Standard的Attention是怎么实现的：
 
-* 首先从HBM里面分块加载Q和K并计算S，然后会把S逐块写回HBM，此时HBM里面存放的有完整的S；
-* 其次从HBM里面加载S，对S做softmax得到P，把P写回HBM，此时HBM里面存放的有完整的P；
-* 之后从HBM里面分块加载P和V并计算O，然后会把O逐块写回HBM，此时HBM里面存放的有完整的O。
+* 首先从HBM里面分块加载Q和K到SRAM并计算S，然后会把S逐块写回HBM，此时HBM里面存放的有完整的S；
+* 其次从HBM里面加载S到SRAM，对S做softmax得到P，把P写回HBM，此时HBM里面存放的有完整的P；
+* 之后从HBM里面分块加载P和V到SRAM并计算O，然后会把O逐块写回HBM，此时HBM里面存放的有完整的O。
 
 上述过程，产生了大量对慢速HBM的读写操作(S和P在SRAM和HPM之间的传输)，计算受到HBM带宽限制，计算单元等待数据时间长。
 
@@ -109,7 +109,7 @@ flash2是这么做的，对于结果O1 O2 O3 O4，每个warp分别结算Oi，这
 
 利用NVIDIA Hopper GPU提供的TMA和WGMMA异步硬件指令来实现数据搬运和计算的并行。
 
-针对一个CTA，其包含生产者warp group和消费者warp group，前者利用TMA来异步将Q,K,V从HBM搬运到SMEM，后者利用WGMMA来异步计算GEMM和Softmax。生产者搬运完一组K,V之后会通知消费者让其计算O，消费者计算完一组O之后会通知生产者让其搬运下一组K和V。
+针对一个CTA，其包含生产者warp group和消费者warp group，前者利用TMA来异步将Q,K,V从HBM搬运到SMEM，后者进行异步计算GEMM和Softmax。生产者搬运完一组K,V之后会通知消费者让其计算O，消费者计算完一组O之后会通知生产者让其搬运下一组K和V。
 
 在消费者warp group内部，计算步骤是GEMM->Softmax->GEMM(上面的Algorithm1的第16~22行)，即Tensor Core跑完GEMM停下来，等MFU跑Softmax，等MFU跑完之后Tensor Core再去做第三步的GEMM。
 
