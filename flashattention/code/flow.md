@@ -13,9 +13,15 @@ flow：
 * 调用python实现的attention，得到结果O2；
 * 比对两者的结果；
 
-
 flash flow：
 
 * 在序列维度上做并行化，即每个program处理flash attention2算法中的第4~15行；
 * 采用外循环遍历Q，内循环遍历KV，减少warp间通信代价；
 * 在线softmax对应flash attention2算法的第9~10行；
+
+4dflash：
+
+* 前面实现的是2d，即序列长度✖️特征维度，可以基于此实现4d，即批大小✖️序列长度✖️注意力头数✖️特征维度；
+* 需要做的修改有以下几个部分：
+  * 在triton方面：维度由2d变成4d，涉及qkv的初始化、并行化策略、内存访问模式(和stride相关)
+  * 在pytorch方面：矩阵乘改为批量矩阵乘，其中涉及维度变换的流程
