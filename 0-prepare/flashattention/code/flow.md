@@ -1,6 +1,6 @@
-* 程序包含：triton实现的flash attention 和 python实现的attention；
-* 输入：seq_len×d_model(1024×64)规模的Q K V矩阵；
-* 输出：seq_len×d_model的O矩阵；
+* 程序包含：triton实现的flash attention 和 pytorch实现的attention；
+* 输入：Q K V矩阵；
+* 输出：O矩阵；
 
 为什么没用flash-attn的pypi包？因为线上实验环境不满足CUDA>=12.0。
 
@@ -23,5 +23,13 @@ flash flow：
 
 * 前面实现的是2d，即序列长度✖️特征维度，可以基于此实现4d，即批大小✖️序列长度✖️注意力头数✖️特征维度；
 * 需要做的修改有以下几个部分：
-  * 在triton方面：维度由2d变成4d，涉及qkv的初始化、并行化策略、内存访问模式(和stride相关)
+  * 在triton方面：维度由2d变成4d，涉及qkv的初始化、并行化策略
   * 在pytorch方面：矩阵乘改为批量矩阵乘，其中涉及维度变换的流程
+
+---
+
+1.flash attention怎么处理在线softmax；
+
+2.constexpr的作用；
+
+3.算法转为实现，对角矩阵乘/广播逐元素乘，对角矩阵逆矩阵乘/广播逐元素除
